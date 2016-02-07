@@ -11,7 +11,7 @@
 """
 
 
-# In[17]:
+# In[3]:
 
 import random, math
 
@@ -46,10 +46,10 @@ raw_target = [np.random.uniform(0,1,1000) for i in range(numOfDataSet)]
 
 # In[13]:
 
-trainData, trainTarget, testData, testTarget = cross_validation(raw_data, raw_target)
+trainSet, testSet = cross_validation(raw_data, raw_target)
 
 
-# In[26]:
+# In[4]:
 
 def findPairDistance(x, y):
 	"""
@@ -59,7 +59,7 @@ def findPairDistance(x, y):
 	return math.sqrt(sum([ math.pow(p-q, 2) for p, q in dimPairs ]))
 
 
-# In[19]:
+# In[5]:
 
 def getKNearestNeighbors(train_set, test_instance, k):
     
@@ -125,7 +125,7 @@ def partition(A, p, r, indiceOfA):
     return m+1
 
 
-# In[20]:
+# In[6]:
 
 from collections import Counter
 def get_majority_vote(neighbors):
@@ -135,7 +135,7 @@ def get_majority_vote(neighbors):
     return count.most_common()[0][0]
 
 
-# In[29]:
+# In[7]:
 
 """
   Here we test our implemented algorithm whin sklearn's example
@@ -154,11 +154,11 @@ def main():
     #arbitarily set k = 5
     k = 5
     for i in xrange(len(testSet)):
-        print "classifying test-(%d)" % i
+#         print "classifying test-(%d)" % i
         neighbors = getKNearestNeighbors(trainSet, testSet[i][0], k=5)
         majority_vote = get_majority_vote(neighbors)        
         predictions.append(majority_vote)
-        print "predicted label: %d, actual label: %d" % (majority_vote, testSet[i][1])
+#         print "predicted label: %d, actual label: %d" % (majority_vote, testSet[i][1])
     
     #summarize performance of the classfication
     print "\nOverall accuracy of the model: %f" % accuracy_score(testSet_y, predictions)
@@ -168,7 +168,63 @@ def main():
 main()
 
 
+# In[1]:
+
+get_ipython().magic(u'matplotlib inline')
+from sklearn.decomposition import RandomizedPCA
+from sklearn.datasets import load_iris
+import numpy as np 
+import matplotlib.pylab as plt
+iris = load_iris()
+pca = RandomizedPCA(n_components = 2)
+x_pca = pca.fit_transform(iris.data)
+print x_pca.shape
+
+from itertools import cycle
+colors = ['b','g','r', 'c']
+markers = ['+', 'o', '^', 'v']
+for i,c,m in zip(np.unique(iris.target), cycle(colors), cycle(markers)):
+    plt.scatter(x_pca[iris.target==i, 0], x_pca[iris.target==i, 1], c=c, marker=m, label=i, alpha=0.5)
+
+plt.title("sklearn.dataset=iris")
+plt.legend(loc="best")
+plt.show()
+
+
+# In[14]:
+
+get_ipython().magic(u'matplotlib inline')
+from sklearn.decomposition import TruncatedSVD
+
+svd = TruncatedSVD(n_components = 2)
+x_svd = svd.fit_transform(zip(*trainSet)[0])
+
+plt.scatter(x_svd[:,0], x_svd[:,1], c=zip(*trainSet)[1], s = 50, cmap=plt.cm.Paired)
+plt.colorbar()
+plt.xlabel('a')
+plt.ylabel('b')
+plt.title("first 2 components using iris data")
+plt.show()
+
+
 # In[ ]:
 
+"""
+ to find better parameter K, here I use sklearn.grid_search
+"""
+from sklearn import neighbors as kNN
+from sklearn.grid_search import GridSearchCV
+from pprint import pprint
+import numpy as np
 
+iris = load_iris()    
+trainSet, testSet = cross_validation(iris.data, iris.target)
+
+# arbitarily choose 20 random k.
+kSet = np.arange(20)+1
+knn_parameters = {'n_neighbors': kSet}
+clf = sklearn.grid_search.GridSearchCV(kNN.KNeighborsClassifier(), knn_parameters, cv = 10)
+
+
+clf.fit(zip(*trainSet)[0], zip(*trainSet)[1])
 
